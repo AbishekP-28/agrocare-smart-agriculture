@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroCare - Field Monitoring</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f7f0 0%, #e0ebe0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Header */
+        .header {
+            background: #2d5a2c;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        
+        /* Notification Styles */
+        .notification-wrapper { position: relative; }
+        .notification-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 50px;
+            color: white;
+            transition: all 0.2s;
+        }
+        .notification-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 50px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .notification-panel {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: 350px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .notification-header {
+            background: #2d5a2c;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+        .notification-list { max-height: 400px; overflow-y: auto; }
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .notification-item:hover { background: #f5f5f5; }
+        .notification-item.critical { border-left: 4px solid #dc3545; background: #fff5f5; }
+        .notification-item.dry { border-left: 4px solid #ff9800; background: #fff8f0; }
+        .notification-title { font-weight: bold; margin-bottom: 5px; }
+        .notification-title.critical { color: #dc3545; }
+        .notification-title.dry { color: #ff9800; }
+        .notification-message { font-size: 13px; color: #666; margin-bottom: 5px; }
+        .notification-time { font-size: 11px; color: #999; }
+        .notification-empty { padding: 30px; text-align: center; color: #999; }
+        
+        /* Navigation */
+        .nav {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .nav a, .nav button {
+            text-decoration: none;
+            color: #2d5a2c;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .nav a:hover, .nav button:hover { background: #e8f5e9; }
+        .nav .logout-btn { background: #dc3545; color: white; }
+        .nav .logout-btn:hover { background: #c82333; }
+        
+        /* Cards */
+        .setup-card {
+            max-width: 500px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .setup-card h2 { color: #2d5a2c; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; font-size: 14px; }
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            font-size: 16px;
+            transition: all 0.2s;
+            background: white;
+            cursor: pointer;
+        }
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232d5a2c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 20px;
+        }
+        input:focus, select:focus { outline: none; border-color: #2d5a2c; }
+        .btn {
+            background: #2d5a2c;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn:hover { background: #1b4e1a; transform: scale(1.02); }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-3px); }
+        .card-critical { border-left: 8px solid #dc3545; background: #fff5f5; }
+        .card-dry { border-left: 8px solid #ff9800; background: #fff8f0; }
+        .card-good { border-left: 8px solid #4caf50; background: #f0faf0; }
+        .field-name { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .field-details { color: #666; margin-bottom: 15px; font-size: 14px; }
+        
+        .water-meter { margin: 15px 0; }
+        .meter-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; font-weight: bold; }
+        .meter-bar { background: #e0e0e0; border-radius: 20px; height: 30px; overflow: hidden; }
+        .meter-fill {
+            height: 100%;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .meter-fill.critical { background: #dc3545; }
+        .meter-fill.dry { background: #ff9800; }
+        .meter-fill.good { background: #4caf50; }
+        
+        .rainfall-info {
+            margin: 10px 0;
+            padding: 8px;
+            background: #e3f2fd;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .status-critical { background: #dc3545; color: white; }
+        .status-dry { background: #ff9800; color: white; }
+        .status-good { background: #4caf50; color: white; }
+        
+        .action-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .action-text { font-size: 18px; font-weight: bold; color: #2d5a2c; }
+        .button-group { display: flex; gap: 10px; margin-top: 10px; }
+        .button-group .btn { flex: 1; text-align: center; }
+        
+        .priority-list {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .priority-list h3 { color: #2d5a2c; margin-bottom: 15px; }
+        .priority-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .priority-item:last-child { border-bottom: none; }
+        .priority-number { font-weight: bold; font-size: 18px; width: 35px; }
+        .priority-name { flex: 1; font-weight: bold; }
+        .priority-moisture { width: 80px; text-align: right; font-weight: bold; }
+        .priority-action { width: 130px; text-align: right; font-size: 13px; font-weight: bold; }
+        .priority-action.critical { color: #dc3545; }
+        .priority-action.dry { color: #ff9800; }
+        .priority-action.good { color: #4caf50; }
+        
+        .report-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .sensor-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .sensor-value { font-size: 28px; font-weight: bold; color: #2d5a2c; }
+        
+        .footer { text-align: center; padding: 20px; color: #5e8b5e; font-size: 13px; }
+        .error-box { background: #ffebee; color: #c62828; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+        
+        @media (max-width: 700px) {
+            .grid { grid-template-columns: 1fr; }
+            .sensor-grid { grid-template-columns: 1fr; }
+            .button-group { flex-direction: column; }
+            .notification-panel { width: 300px; right: -50px; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1>🌾 AGROCARE</h1>
+                <p>Know when to water your fields | Save water | Grow better crops</p>
+            </div>
+            <div class="notification-wrapper">
+                <button class="notification-btn" onclick="toggleNotifications()">
+                    🔔
+                    <span id="notificationCount" class="notification-badge">0</span>
+                </button>
+                <div id="notificationPanel" class="notification-panel" style="display: none;">
+                    <div class="notification-header">
+                        <span>🚨 Irrigation Alerts</span>
+                        <button onclick="closeNotifications()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: white;">✕</button>
+                    </div>
+                    <div id="notificationList" class="notification-list">
+                        <div class="notification-empty">Loading alerts...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if has_fields and page != "setup_form" and page != "add_field_form" %}
+<div class="nav">
+    <a href="/">🏠 Dashboard</a>
+    <a href="/add-field">➕ Add New Field</a>
+    <button onclick="simulateData()">📡 Simulate Sensor Data</button>
+    <a href="/logout" class="logout-btn">🚪 Logout</a>
+</div>
+{% endif %}
+
+    <!-- PAGE 1: Field Details Form -->
+    {% if page == "setup_form" %}
+    <div class="setup-card">
+        <h2>📝 Enter Field Details</h2>
+        <form action="/save-fields" method="POST">
+            <input type="hidden" name="num_fields" value="{{ num_fields }}">
+            {% for i in range(num_fields) %}
+            <div style="border: 1px solid #e0e0e0; border-radius: 15px; padding: 15px; margin-bottom: 20px;">
+                <h3>Field {{ i + 1 }}</h3>
+                <div class="form-group">
+                    <label>Field Name</label>
+                    <input type="text" name="field_{{ i }}_name" required placeholder="e.g., North Field">
+                </div>
+                <div class="form-group">
+                    <label>Area (Acres)</label>
+                    <input type="number" name="field_{{ i }}_area" step="0.1" required placeholder="e.g., 2">
+                </div>
+                <div class="form-group">
+                    <label>Crop Type</label>
+                    <select name="field_{{ i }}_crop" required>
+                        <option value="">-- Select Crop --</option>
+                        <option value="Rice">🌾 Rice</option>
+                        <option value="Wheat">🌾 Wheat</option>
+                        <option value="Cotton">🌿 Cotton</option>
+                        <option value="Maize">🌽 Maize (Corn)</option>
+                        <option value="Sugarcane">🎋 Sugarcane</option>
+                    </select>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn" style="width: 100%;">Save All Fields →</button>
+        </form>
+    </div>
+
+    <!-- PAGE 2: Add New Field Form -->
+    {% elif page == "add_field_form" %}
+    <div class="setup-card">
+        <h2>➕ Add New Field</h2>
+        <p style="margin: 10px 0 20px 0; color: #666;">Enter the details for your new field</p>
+        {% if request.query_params.get('error') %}
+        <div class="error-box">Please fill in all fields</div>
+        {% endif %}
+        <form action="/add-field" method="POST">
+            <div class="form-group">
+                <label for="name">Field Name *</label>
+                <input type="text" id="name" name="name" required placeholder="e.g., South Field">
+            </div>
+            <div class="form-group">
+                <label for="area_acres">Area (Acres) *</label>
+                <input type="number" id="area_acres" name="area_acres" step="0.1" required placeholder="e.g., 2.5">
+            </div>
+            <div class="form-group">
+                <label for="crop_type">Crop Type *</label>
+                <select id="crop_type" name="crop_type" required>
+                    <option value="">-- Select Crop --</option>
+                    <option value="Rice">🌾 Rice</option>
+                    <option value="Wheat">🌾 Wheat</option>
+                    <option value="Cotton">🌿 Cotton</option>
+                    <option value="Maize">🌽 Maize (Corn)</option>
+                    <option value="Sugarcane">🎋 Sugarcane</option>
+                </select>
+            </div>
+            <button type="submit" class="btn" style="width: 100%;">➕ Add Field</button>
+        </form>
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="/" style="color: #2d5a2c;">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- PAGE 3: Field Report -->
+    {% elif page == "report" %}
+    <div class="report-card">
+        <h2>📊 {{ field.name }} - Field Report</h2>
+        <div class="field-details" style="font-size: 16px; margin: 15px 0;">
+            {% if field.crop_type == 'Rice' %}🌾
+            {% elif field.crop_type == 'Wheat' %}🌾
+            {% elif field.crop_type == 'Cotton' %}🌿
+            {% elif field.crop_type == 'Maize' %}🌽
+            {% elif field.crop_type == 'Sugarcane' %}🎋
+            {% else %}🌱{% endif %} Crop: {{ field.crop_type }} | 📏 Area: {{ field.area_acres }} Acres
+        </div>
+        {% if latest %}
+        <div class="sensor-grid">
+            <div class="sensor-item">
+                <div>💧 Soil Moisture</div>
+                <div class="sensor-value">{{ latest.soil_moisture }}%</div>
+            </div>
+            <div class="sensor-item">
+                <div>🌡️ Temperature</div>
+                <div class="sensor-value">{{ latest.temperature }}°C</div>
+            </div>
+            <div class="sensor-item">
+                <div>☔ Rainfall</div>
+                <div class="sensor-value">{{ latest.rainfall }} mm</div>
+            </div>
+            <div class="sensor-item">
+                <div>💨 Humidity</div>
+                <div class="sensor-value">{{ latest.humidity }}%</div>
+            </div>
+        </div>
+        <div class="water-meter">
+            <div class="meter-label">
+                <span>💧 Water Level</span>
+                <span>{{ latest.soil_moisture }}%</span>
+            </div>
+            <div class="meter-bar">
+                <div class="meter-fill 
+                    {% if latest.soil_moisture < 20 %}critical
+                    {% elif latest.soil_moisture < 40 %}dry
+                    {% else %}good{% endif %}"
+                    style="width: {{ latest.soil_moisture }}%;">
+                </div>
+            </div>
+        </div>
+        {% if latest.rainfall > 0 %}
+        <div class="rainfall-info">
+            <span>☔ Recent Rainfall: <strong>{{ latest.rainfall }} mm</strong></span>
+            {% if latest.rainfall > 5 %}
+            <span style="color: #1565c0; margin-left: 8px;">→ Natural irrigation! Delay watering.</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        <div>
+            <span class="status-badge 
+                {% if status == '🔴 Water Needed Now' %}status-critical
+                {% elif status == '🟡 Water Needed Soon' %}status-dry
+                {% else %}status-good{% endif %}">
+                {{ status }}
+            </span>
+        </div>
+        <div class="action-box">
+            <div class="action-text">🎯 {{ action }}</div>
+            <p style="margin-top: 8px;">{{ message }}</p>
+        </div>
+
+        {% else %}
+        <div class="action-box">
+            <p>⚠️ No sensor data yet. Click "Simulate Sensor Data" to generate readings.</p>
+        </div>
+        {% endif %}
+        <a href="/" class="btn">← Back to Dashboard</a>
+    </div>
+
+    <!-- PAGE 4: First Time Setup -->
+    {% elif not has_fields %}
+    <div class="setup-card">
+        <h2>🌱 Welcome to AgroCare</h2>
+        <p style="margin: 15px 0; color: #666;">Let's set up your farm. How many fields do you have?</p>
+        <form action="/setup" method="POST">
+            <div class="form-group">
+                <label for="num_fields">Number of Fields</label>
+                <input type="number" id="num_fields" name="num_fields" min="1" max="20" required>
+            </div>
+            <button type="submit" class="btn" style="width: 100%;">Continue →</button>
+        </form>
+    </div>
+
+    <!-- PAGE 5: Dashboard -->
+    {% else %}
+    <div class="grid">
+        {% for field in fields %}
+        <div class="card 
+            {% if field.status == '🔴 Water Needed Now' %}card-critical
+            {% elif field.status == '🟡 Water Needed Soon' %}card-dry
+            {% else %}card-good{% endif %}">
+            <div class="field-name">{{ field.name }}</div>
+            <div class="field-details">
+                {% if field.crop_type == 'Rice' %}🌾
+                {% elif field.crop_type == 'Wheat' %}🌾
+                {% elif field.crop_type == 'Cotton' %}🌿
+                {% elif field.crop_type == 'Maize' %}🌽
+                {% elif field.crop_type == 'Sugarcane' %}🎋
+                {% else %}🌱{% endif %} {{ field.crop_type }} | 📏 {{ field.area_acres }} Acres
+            </div>
+            <div class="water-meter">
+                <div class="meter-label">
+                    <span>💧 Water Level</span>
+                    <span>{{ field.moisture }}%</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-fill 
+                        {% if field.moisture < 20 %}critical
+                        {% elif field.moisture < 40 %}dry
+                        {% else %}good{% endif %}"
+                        style="width: {{ field.moisture }}%;">
+                    </div>
+                </div>
+            </div>
+            <div class="rainfall-info">
+                <span>☔ Recent Rainfall: <strong>{{ field.rainfall }} mm</strong></span>
+                {% if field.rainfall > 5 %}
+                <span style="color: #1565c0; margin-left: 8px;">💧 Delay irrigation</span>
+                {% endif %}
+            </div>
+            <div class="status-badge 
+                {% if field.status == '🔴 Water Needed Now' %}status-critical
+                {% elif field.status == '🟡 Water Needed Soon' %}status-dry
+                {% else %}status-good{% endif %}">
+                {{ field.status }}
+            </div>
+            <div class="action-box">
+                <div class="action-text">👉 {{ field.next_watering }}</div>
+            </div>
+            <div class="button-group">
+                <a href="/field/{{ field.id }}" class="btn">📊 View Details</a>
+                <button onclick="deleteField({{ field.id }}, '{{ field.name }}')" class="btn btn-danger">🗑️ Delete</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Irrigation Priority -->
+    <div class="priority-list">
+        <h3>🚨 Irrigation Priority</h3>
+        {% set sorted_fields = fields|sort(attribute='moisture') %}
+        {% for field in sorted_fields %}
+        <div class="priority-item">
+            <div class="priority-number">{{ loop.index }}.</div>
+            <div class="priority-name">{{ field.name }} ({{ field.crop_type }})</div>
+            <div class="priority-moisture">{{ field.moisture }}%</div>
+            <div class="priority-action 
+                {% if field.moisture < 20 %}critical
+                {% elif field.moisture < 40 %}dry
+                {% else %}good{% endif %}">
+                {% if field.moisture < 20 %}
+                    🔴 Irrigate Now
+                {% elif field.moisture < 40 %}
+                    {% if field.rainfall > 5 %}⏸️ Wait (Rain){% else %}🟡 Irrigate Tomorrow{% endif %}
+                {% else %}
+                    ✅ OK
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>🌱 AgroCare - Smart Agriculture Field Monitoring System | Helping farmers make better irrigation decisions</p>
+    </div>
+</div>
+
+<script>
+    let notifications = [];
+    let notificationPanelOpen = false;
+
+    // Safely get fields from template (default to empty array if undefined)
+    const fields = {{ fields | default([]) | tojson }};
+
+    function updateNotificationBadge() {
+        const count = notifications.filter(n => !n.read).length;
+        const badge = document.getElementById('notificationCount');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'block' : 'none';
+        }
+    }
+
+    function renderNotifications() {
+        const list = document.getElementById('notificationList');
+        if (!list) return;
+        
+        if (notifications.length === 0) {
+            list.innerHTML = '<div class="notification-empty">✅ No alerts\n\nAll fields have adequate water levels</div>';
+            return;
+        }
+        
+        list.innerHTML = notifications.map(notif => `
+            <div class="notification-item ${notif.type}" onclick="markAsRead(${notif.id}); window.location.href='/field/${notif.fieldId}'">
+                <div class="notification-title ${notif.type}">${notif.title}</div>
+                <div class="notification-message">${notif.message}</div>
+                <div class="notification-time">${notif.timestamp}</div>
+            </div>
+        `).join('');
+    }
+
+    function markAsRead(id) {
+        const notif = notifications.find(n => n.id === id);
+        if (notif) {
+            notif.read = true;
+            updateNotificationBadge();
+            renderNotifications();
+        }
+    }
+
+    function toggleNotifications() {
+        const panel = document.getElementById('notificationPanel');
+        if (panel) {
+            notificationPanelOpen = !notificationPanelOpen;
+            panel.style.display = notificationPanelOpen ? 'block' : 'none';
+        }
+    }
+
+    function closeNotifications() {
+        const panel = document.getElementById('notificationPanel');
+        if (panel) {
+            notificationPanelOpen = false;
+            panel.style.display = 'none';
+        }
+    }
+
+    function generateNotificationsFromFields(fieldsData) {
+        notifications = [];
+        for (const field of fieldsData) {
+            let title = '', message = '', type = '';
+            
+            if (field.moisture < 20) {
+                title = '🔴 CRITICAL - Immediate Action Required';
+                message = `${field.name} (${field.crop_type}) has only ${field.moisture}% water level. Irrigate TODAY EVENING!`;
+                type = 'critical';
+            } else if (field.moisture < 40) {
+                if (field.rainfall > 5) {
+                    title = '🟡 Monitor - Rain Expected';
+                    message = `${field.name} has ${field.moisture}% water + ${field.rainfall}mm rain. Wait before irrigating.`;
+                } else {
+                    title = '🟡 Attention Needed Soon';
+                    message = `${field.name} (${field.crop_type}) has ${field.moisture}% water level. Plan irrigation for TOMORROW.`;
+                }
+                type = 'dry';
+            } else {
+                continue;
+            }
+            
+            notifications.push({
+                id: Date.now() + Math.random(),
+                title: title,
+                message: message,
+                type: type,
+                fieldId: field.id,
+                fieldName: field.name,
+                timestamp: new Date().toLocaleTimeString(),
+                read: false
+            });
+        }
+        
+        notifications.sort((a, b) => {
+            if (a.type === 'critical' && b.type !== 'critical') return -1;
+            if (a.type !== 'critical' && b.type === 'critical') return 1;
+            return 0;
+        });
+        
+        updateNotificationBadge();
+        renderNotifications();
+    }
+
+    let simulating = false;
+function simulateData() {
+    if (simulating) return;
+    simulating = true;
+    const btn = document.querySelector('button[onclick="simulateData()"]');
+    const originalText = btn.innerText;
+    btn.innerText = '⏳ Simulating...';
+    btn.disabled = true;
+    
+    fetch('/api/simulate/trigger', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        })
+        .catch(() => {
+            alert('Simulation triggered! Refresh the page.');
+            location.reload();
+        })
+        .finally(() => {
+            simulating = false;
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+}
+
+    function deleteField(fieldId, fieldName) {
+        if (confirm(`⚠️ Are you sure you want to delete "${fieldName}"?\n\nThis will remove the field and all its sensor data. This action cannot be undone!`)) {
+            fetch(`/delete-field/${fieldId}`, { method: 'POST' })
+                .then(() => {
+                    alert(`✅ Field "${fieldName}" has been deleted.`);
+                    location.reload();
+                })
+                .catch(error => {
+                    alert('❌ Error deleting field. Please try again.');
+                    console.error(error);
+                });
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        const wrapper = document.querySelector('.notification-wrapper');
+        const panel = document.getElementById('notificationPanel');
+        if (wrapper && panel && notificationPanelOpen && !wrapper.contains(event.target)) {
+            closeNotifications();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (fields && fields.length > 0) {
+            generateNotificationsFromFields(fields);
+        }
+    });
+</script>
+</body>
+</html>

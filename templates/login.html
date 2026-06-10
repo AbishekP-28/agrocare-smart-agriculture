@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AgroCare</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            background: white;
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .auth-card:hover { transform: translateY(-4px); }
+        .logo { text-align: center; font-size: 48px; margin-bottom: 16px; }
+        h1 { text-align: center; color: #2d5a2c; font-size: 28px; margin-bottom: 8px; }
+        .welcome-text { text-align: center; color: #555; font-size: 14px; margin-bottom: 32px; line-height: 1.5; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 14px; }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        input {
+            width: 100%;
+            padding: 14px 45px 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        input:focus { outline: none; border-color: #2d5a2c; }
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #888;
+            user-select: none;
+        }
+        .password-toggle:hover { color: #2d5a2c; }
+        .btn {
+            width: 100%;
+            background: #2d5a2c;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn:hover { background: #1b4e1a; transform: scale(1.02); }
+        .forgot-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: #2d5a2c;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .forgot-link:hover { text-decoration: underline; }
+        .bottom-text {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 14px;
+        }
+        .bottom-text a { color: #2d5a2c; text-decoration: none; font-weight: bold; }
+        .bottom-text a:hover { text-decoration: underline; }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        @media (max-width: 480px) {
+            .auth-card { padding: 28px; }
+            h1 { font-size: 24px; }
+            .btn { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="logo">🌱</div>
+        <h1>AgroCare</h1>
+        <div class="welcome-text">Welcome to AgroCare<br>Monitor your farm efficiently with real-time agricultural insights.</div>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        {% if message %}<div class="info">{{ message }}</div>{% endif %}
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="tel" name="mobile_number" placeholder="Enter your mobile number" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                    <span class="password-toggle" onclick="togglePassword()">👁️</span>
+                </div>
+            </div>
+            <button type="submit" class="btn">Login</button>
+            <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
+        </form>
+        <div class="bottom-text">Don't have an account? <a href="/signup">Sign Up</a></div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.querySelector('.password-toggle');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>
